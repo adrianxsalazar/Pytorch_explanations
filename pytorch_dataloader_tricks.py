@@ -8,7 +8,7 @@ import os
 import matplotlib.pyplot as plt
 from PIL import Image
 import torchvision
-import torchvision.transfrom as transforms
+import torchvision.transforms as transforms
 torch.manual_seed(0)
 
 ############ 1.0 UNDERSTANDING THE DATALOADER FUNCTION ############
@@ -87,6 +87,30 @@ for i,batch in enumerate(data_loader):      #batch loop
 
 ############ 1.2 CREATE A DATASET WITH IMAGES IN A FOLDER ############
 print('\n 1.2 CREATE A DATASET WITH IMAGES IN A FOLDER \n')
+
+# first, we need to get the image path and the labels.
+imagelist=[]
+labels=[]
+
+#directory where we have the images
+folder_dir = "./images_demo/"
+
+# os.listdir gets all the files in a directory and the loop goes through all
+#the files.
+for image in os.listdir(folder_dir):
+    if image.endswith(".jpg"):                        #Check whether is an image
+        imagelist.append(os.path.join(folder_dir,image))
+
+        #Add a label based on what is in the image (based on the image name)
+        if 'robot' in image:
+            labels.append(0)
+
+        elif 'car' in image:
+            labels.append(1)
+
+print(f'The image paths are: {imagelist}. \n The labels are: {labels} \n')
+
+
 #transforms.Compose([transforms.ToTensor(),transforms.Resize((,))])
 #transfrom.ToTensor takes an image matrix. transforms.Resize resizes the tensor.
 transform= transforms.Compose([transforms.ToTensor(),transforms.Resize((100,100))])
@@ -94,17 +118,37 @@ transform= transforms.Compose([transforms.ToTensor(),transforms.Resize((100,100)
 #We will need to use transform from torchvisions to open the images with tensors.
 #Then, apply implement the transform in the JointDataset class.
 
-class ImageDataset(dataset):
-    def __init__(self,imagelist,label_list):
-        self.imagelist()
+#JointDataset class to fetch images and labels in a batch.
+class ImageDataset(Dataset):
+    def __init__(self,imagelist,label_list,transforms):
+        self.imagelist=imagelist
+        self.labels=label_list
+        self.transforms=transforms
 
     def __len__(self):
+        return len(self.imagelist)
 
     def __getitem__(self,idx):
+        #get the label
+        label=self.labels[idx]
+        #get the image into an array format
+        image=Image.open(self.imagelist[idx])
+
+        if self.transforms is not None:
+            image=self.transforms(image)
 
         return image,label
 
+#Build the class
+imagedataset=ImageDataset(imagelist,labels,transform)
+data_loader=DataLoader(imagedataset,batch_size=2, shuffle=True) #create the dataloader
+
+#Check the tensors in the dataset
+for i,batch in enumerate(data_loader):
+    print (f'Bach {i}: Number of items in the batch {len(batch)}, labels {batch[1]}, shape tensor {batch[0][0].shape}')
 
 
 ############ 1.3 LOAD AND USE IMAGE DATASET FROM TORCHVISION ############
 print('\n 1.3 LOAD AND USE AN IMAGE DATASET FROM TORCHVISION \n')
+
+#We can 
